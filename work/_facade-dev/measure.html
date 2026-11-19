@@ -1,0 +1,56 @@
+<!doctype html>
+<meta charset="utf-8">
+<body><pre id="out">measuring…</pre>
+<script>
+// 量一张立面瓦片的「竖向白缝（窗间墙/竖梃）」位置，用来数开间数。
+// 用法：msedge --headless --dump-dom --allow-file-access-from-files measure.html?f=<urlencoded path>
+const q = new URLSearchParams(location.search);
+const src = q.get('f');
+const img = new Image();
+img.onload = () => {
+  const W = img.naturalWidth, H = img.naturalHeight;
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
+  ctx.drawImage(img, 0, 0);
+  const d = ctx.getImageData(0, 0, W, H).data;
+  // 只看中部窗带（避开上下线脚）：y 25%~75%
+  const y0 = Math.round(H * 0.28), y1 = Math.round(H * 0.72);
+  const col = new Array(W).fill(0);
+  for (let y = y0; y < y1; y++) {
+    for (let x = 0; x < W; x++) {
+      const i = (y * W + x) * 4;
+      col[x] += 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+    }
+  }
+  const n = y1 - y0;
+  const prof = col.map((v) => v / n);
+  const mean = prof.reduce((a, b) => a + b, 0) / W;
+  // 亮区（白缝/窗间墙）：比均值高 12% 以上，且持续 >= 6px
+  let runs = [], cur = null;
+  for (let x = 0; x < W; x++) {
+    const bright = prof[x] > mean * 1.12;
+    if (bright && !cur) cur = { a: x, b: x };
+    else if (bright) cur.b = x;
+    else if (cur) { if (cur.b - cur.a >= 6) runs.push(cur); cur = null; }
+  }
+  if (cur && cur.b - cur.a >= 6) runs.push(cur);
+  const centers = runs.map((r) => Math.round((r.a + r.b) / 2));
+  // 粗粒度亮度剖面（每 8px 一档），用于人工判断开间节奏
+  const B = 8, coarse = [];
+  for (let x = 0; x < W; x += B) {
+    let s = 0;
+    for (let k = 0; k < B && x + k < W; k++) s += prof[x + k];
+    coarse.push(Math.round(s / Math.min(B, W - x)));
+  }
+  document.getElementById('out').textContent = JSON.stringify({
+    W, H, mean: +mean.toFixed(1),
+    runs: runs.map((r) => [r.a, r.b, Math.round(prof[(r.a + r.b) >> 1])]),
+    centers,
+    gaps: centers.slice(1).map((c, i) => c - centers[i]),
+    coarse,
+  });
+};
+img.onerror = () => { document.getElementById('out').textContent = 'ERR'; };
+img.src = src;
+</script>

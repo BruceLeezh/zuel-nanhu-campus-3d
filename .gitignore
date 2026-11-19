@@ -1,0 +1,17 @@
+# 本机依赖
+node_modules/
+
+# 重媒体资产（本机保留，见 README「仓库未包含」）
+work/shots/
+work/real-photos/
+work/pg/
+work/qm/
+work/archive/
+
+# 误放根目录的个人文件隔离区
+_non-project/
+
+# 系统垃圾
+Thumbs.db
+.DS_Store
+*.tmp

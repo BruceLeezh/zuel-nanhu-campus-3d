@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>中南财经政法大学 · 南湖校区｜网页 3D 自由探索</title>
+<style>
+  :root {
+    --ink: #eef2f4;
+    --dim: #9fb0bb;
+    --glass: rgba(12, 20, 26, 0.62);
+    --glass-b: rgba(255, 255, 255, 0.12);
+    --accent: #ffd479;
+    --accent2: #7fd1c0;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #0b1014; }
+  body {
+    font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
+    color: var(--ink);
+    user-select: none;
+  }
+  #c { display: block; width: 100vw; height: 100vh; touch-action: none; }
+  .hidden { opacity: 0 !important; pointer-events: none !important; }
+
+  /* ---------- 载入 ---------- */
+  #boot {
+    position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 22px;
+    background: radial-gradient(120% 90% at 50% 0%, #1d2a33 0%, #0a0f13 70%);
+    transition: opacity .7s ease;
+  }
+  #boot h1 {
+    margin: 0; font-size: clamp(20px, 3.4vw, 38px); letter-spacing: .12em; font-weight: 600;
+    background: linear-gradient(180deg, #fff 20%, #b9c9d2 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  #boot .sub { color: var(--dim); font-size: 13px; letter-spacing: .28em; }
+  #bar { width: min(380px, 62vw); height: 3px; background: rgba(255,255,255,.12); border-radius: 3px; overflow: hidden; }
+  #bar > i { display: block; height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent2), var(--accent)); transition: width .35s ease; }
+  #bootmsg { color: #8fa2ad; font-size: 12px; letter-spacing: .06em; min-height: 17px; }
+
+  /* ---------- HUD ---------- */
+  #hud { position: fixed; inset: 0; z-index: 20; pointer-events: none; }
+  .panel {
+    background: var(--glass); border: 1px solid var(--glass-b); border-radius: 14px;
+    backdrop-filter: blur(9px) saturate(1.15); -webkit-backdrop-filter: blur(9px) saturate(1.15);
+    box-shadow: 0 10px 30px rgba(0,0,0,.35);
+  }
+  #keys {
+    position: absolute; left: 18px; bottom: 18px; padding: 12px 14px 10px; width: 268px;
+    font-size: 12px; line-height: 1.85; color: #cfdbe2; transition: opacity .3s;
+  }
+  #keys h3 { margin: 0 0 6px; font-size: 12px; letter-spacing: .18em; color: var(--accent); font-weight: 600; }
+  #keys .row { display: flex; justify-content: space-between; gap: 10px; }
+  #keys kbd {
+    display: inline-block; min-width: 20px; padding: 1px 6px; margin: 0 1px;
+    border-radius: 5px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.18);
+    border-bottom-width: 2px; font-family: inherit; font-size: 11px; color: #fff; text-align: center;
+  }
+  #keys .tog { margin-top: 7px; color: #8ea0ac; font-size: 11px; letter-spacing: .04em; }
+  #zone {
+    position: absolute; left: 50%; top: 20px; transform: translateX(-50%);
+    padding: 9px 20px; font-size: 14px; letter-spacing: .16em; text-align: center;
+  }
+  #zone b { color: var(--accent); font-weight: 600; }
+  #zone small { display: block; margin-top: 3px; font-size: 11px; letter-spacing: .08em; color: #9fb0bb; }
+  #compass {
+    position: absolute; right: 18px; top: 18px; width: 128px; height: 128px; border-radius: 50%;
+    display: grid; place-items: center;
+  }
+  #compass canvas { width: 112px; height: 112px; }
+  #stats {
+    position: absolute; right: 18px; bottom: 18px; padding: 10px 12px; font-size: 11px;
+    color: #a9bac4; line-height: 1.7; letter-spacing: .03em; min-width: 132px;
+  }
+  #stats b { color: #fff; font-weight: 600; }
+  #hint {
+    position: absolute; left: 50%; bottom: 88px; transform: translateX(-50%);
+    padding: 8px 16px; font-size: 12.5px; letter-spacing: .05em; opacity: 0; transition: opacity .25s;
+    white-space: nowrap;
+  }
+  #hint.on { opacity: 1; }
+  #hint kbd { padding: 1px 6px; border-radius: 4px; background: rgba(255,255,255,.16); font-size: 11px; }
+  /* 中心准星（抓取时用） */
+  #dot {
+    position: absolute; left: 50%; top: 50%; width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px;
+    border-radius: 50%; background: rgba(255,255,255,.55); box-shadow: 0 0 6px rgba(0,0,0,.6);
+    transition: transform .18s, background .18s;
+  }
+  #dot.act { transform: scale(1.9); background: var(--accent); }
+
+  /* 帮助面板 */
+  #help {
+    position: fixed; inset: 0; z-index: 40; display: grid; place-items: center;
+    background: rgba(4, 8, 11, .58); backdrop-filter: blur(3px); transition: opacity .25s;
+  }
+  #help .card { width: min(720px, 92vw); padding: 26px 30px; }
+  #help h2 { margin: 0 0 4px; font-size: 19px; letter-spacing: .1em; }
+  #help .lead { color: var(--dim); font-size: 12.5px; margin-bottom: 16px; letter-spacing: .05em; }
+  #help .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 26px; font-size: 13px; }
+  #help .cols div { display: flex; justify-content: space-between; gap: 14px; padding: 5px 0; border-bottom: 1px dashed rgba(255,255,255,.09); }
+  #help .cols span { color: #a9bac4; }
+  #help .foot { margin-top: 18px; display: flex; justify-content: space-between; align-items: center; color: #8ea0ac; font-size: 11.5px; }
+  #help button {
+    pointer-events: auto; cursor: pointer; border: 1px solid rgba(255,255,255,.22); background: rgba(255,255,255,.1);
+    color: #fff; padding: 8px 18px; border-radius: 9px; font-family: inherit; font-size: 12.5px; letter-spacing: .1em;
+  }
+  #help button:hover { background: rgba(255,255,255,.2); }
+
+  /* 移动端控件 */
+  #touch { position: fixed; inset: 0; z-index: 25; display: none; pointer-events: none; }
+  #stick {
+    position: absolute; left: 26px; bottom: 30px; width: 122px; height: 122px; border-radius: 50%;
+    background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16); pointer-events: auto;
+  }
+  #stick i {
+    position: absolute; left: 50%; top: 50%; width: 50px; height: 50px; margin: -25px 0 0 -25px;
+    border-radius: 50%; background: rgba(255,255,255,.26); border: 1px solid rgba(255,255,255,.35);
+  }
+  .tbtn {
+    position: absolute; width: 66px; height: 66px; border-radius: 50%; display: grid; place-items: center;
+    font-size: 12px; letter-spacing: .05em; color: #fff; pointer-events: auto;
+    background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);
+  }
+  #tjump { right: 30px; bottom: 116px; }
+  #tgrab { right: 108px; bottom: 52px; }
+  #trun { right: 30px; bottom: 200px; }
+  #look { position: absolute; right: 0; top: 0; width: 55%; height: 78%; pointer-events: auto; }
+
+  /* 致命错误 */
+  #fatal {
+    position: fixed; inset: 0; z-index: 90; display: none; place-items: center; background: #0a0f13; padding: 24px;
+  }
+  #fatal .box { max-width: 620px; }
+  #fatal h2 { color: #ff9d8a; font-size: 18px; margin: 0 0 10px; }
+  #fatal p { color: #b9c9d2; font-size: 13.5px; line-height: 1.9; margin: 6px 0; }
+  #fatal code { background: rgba(255,255,255,.09); padding: 2px 7px; border-radius: 5px; font-size: 12.5px; }
+</style>
+<script>
+/* 截图/调试模式：?shot=1 时隐藏说明层并跳过首次引导，?ui=0 时隐藏全部 HUD */
+(function () {
+  try {
+    var q = new URLSearchParams(location.search);
+    window.__SHOT = q.get('shot') === '1';
+    window.__UI = q.get('ui') !== '0';
+    if (window.__SHOT) {
+      try { sessionStorage.setItem('campus-help-seen', '1'); } catch (e) {}
+      var st = document.createElement('style');
+      st.textContent = '#help{display:none!important}#intro{display:none!important}.intro{display:none!important}';
+      document.head.appendChild(st);
+    }
+    if (!window.__UI) {
+      var st2 = document.createElement('style');
+      st2.textContent = '#zone,#compass,#stats,#hint,#dot,#help,#keys,#touch,#map,#legend{display:none!important}';
+      document.head.appendChild(st2);
+    }
+  } catch (e) {}
+})();
+</script>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="boot">
+  <h1>中南财经政法大学 · 南湖校区</h1>
+  <div class="sub">WEB 3D · 自由探索</div>
+  <div id="bar"><i></i></div>
+  <div id="bootmsg">正在构建校园…</div>
+</div>
+
+<div id="hud">
+  <div id="zone" class="panel"><b>五羊广场</b><small>博文明理 · 厚德济世</small></div>
+  <div id="compass" class="panel"><canvas id="cpc" width="224" height="224"></canvas></div>
+  <div id="keys" class="panel">
+    <h3>操作提示</h3>
+    <div class="row"><span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 行走</span><span><kbd>Shift</kbd> 奔跑</span></div>
+    <div class="row"><span><kbd>Space</kbd> 跳跃</span><span><kbd>鼠标</kbd> 视角</span></div>
+    <div class="row"><span><kbd>E</kbd> 抓取 / 放下</span><span><kbd>F</kbd> 攀爬</span></div>
+    <div class="row"><span><kbd>Q</kbd> 互动</span><span><kbd>C</kbd> 视角切换</span></div>
+    <div class="tog">按 <kbd>H</kbd> 查看完整操作 · <kbd>R</kbd> 回广场 · <kbd>M</kbd> 地图</div>
+  </div>
+  <div id="stats" class="panel">
+    <div>FPS <b id="s-fps">--</b> · 视距 <b id="s-draw">--</b></div>
+    <div>坐标 <b id="s-pos">--</b></div>
+  </div>
+  <div id="hint" class="panel"></div>
+  <div id="dot"></div>
+</div>
+
+<div id="help" class="hidden">
+  <div class="card panel">
+    <h2>操作说明</h2>
+    <div class="lead">没有任务线，没有计时——整座校园随你逛。</div>
+    <div class="cols">
+      <div><span>前后左右</span><b>W A S D / ↑↓←→</b></div>
+      <div><span>奔跑（体力条消耗）</span><b>Shift</b></div>
+      <div><span>跳跃</span><b>Space</b></div>
+      <div><span>转视角</span><b>鼠标拖动 / 滚轮</b></div>
+      <div><span>抓取 / 放下物体</span><b>E</b></div>
+      <div><span>攀爬（贴墙按住）</span><b>F</b></div>
+      <div><span>就近互动（长椅 / 亭子 / 石凳）</span><b>Q</b></div>
+      <div><span>第一 / 第三人称</span><b>C</b></div>
+      <div><span>回到五羊广场</span><b>R</b></div>
+      <div><span>画质档位</span><b>P</b></div>
+      <div><span>校园地图</span><b>M</b></div>
+      <div><span>关闭面板</span><b>H / Esc</b></div>
+    </div>
+    <div class="foot">
+      <span>软体角色 · 物理碰撞 · 抓取攀爬　|　场景按公开资料还原，非精确测绘</span>
+      <button id="help-close">开始逛校园</button>
+    </div>
+  </div>
+</div>
+
+<div id="touch">
+  <div id="stick"><i></i></div>
+  <div id="look"></div>
+  <div id="tjump" class="tbtn">跳</div>
+  <div id="tgrab" class="tbtn">抓</div>
+  <div id="trun" class="tbtn">跑</div>
+</div>
+
+<div id="fatal"><div class="box panel" style="padding:24px">
+  <h2>页面无法启动</h2>
+  <p id="fatal-msg"></p>
+  <p id="fatal-tip"></p>
+</div></div>
+
+<script>
+/* 启动前的环境自检：任何失败都给出可读的中文提示，而不是白屏 */
+(function () {
+  function fatal(msg, tip) {
+    var f = document.getElementById('fatal');
+    var m = document.getElementById('fatal-msg');
+    var t = document.getElementById('fatal-tip');
+    if (m) m.textContent = msg;
+    if (t) t.innerHTML = tip || '';
+    if (f) f.style.display = 'grid';
+    var b = document.getElementById('boot');
+    if (b) b.style.display = 'none';
+  }
+  window.__fatal = fatal;
+  window.addEventListener('error', function (e) {
+    if (window.__started) return;
+    fatal('脚本运行出错：' + (e && e.message ? e.message : '未知错误'),
+      '请刷新页面重试；若反复出现，建议使用较新版本的 Chrome / Edge。');
+  });
+  try {
+    var cv = document.createElement('canvas');
+    var gl = cv.getContext('webgl2') || cv.getContext('webgl');
+    if (!gl) {
+      fatal('当前浏览器未启用 WebGL。', '请在浏览器设置中开启硬件加速后重试（chrome://settings/system）。');
+    }
+  } catch (err) {
+    fatal('WebGL 初始化失败：' + err.message, '请更新显卡驱动或改用 Chrome / Edge 打开。');
+  }
+  /* file:// 下若内联脚本异常，提示用本地服务器 */
+  if (location.protocol === 'file:') {
+    window.__fileMode = true;
+  }
+})();
+</script>
+
+<script>/*__BUNDLE__*/</script>
+</body>
+</html>

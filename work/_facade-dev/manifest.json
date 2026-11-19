@@ -1,0 +1,35 @@
+{
+ "逸夫图书馆": {
+  "tile": "逸夫图书馆.png",
+  "kind": "bay",
+  "floorsPerTile": 1,
+  "baysPerTile": 2,
+  "wallColor": "#ded8c8",
+  "glassColor": "#56707e",
+  "trimColor": "#f0ebde",
+  "confidence": "dev",
+  "note": "506x184 合成测试瓦片"
+ },
+ "文泰楼": {
+  "tile": "文泰楼.png",
+  "kind": "bay",
+  "floorsPerTile": 1,
+  "baysPerTile": 2,
+  "wallColor": "#d6dad8",
+  "glassColor": "#608492",
+  "trimColor": "#e8eae6",
+  "confidence": "dev",
+  "note": "506x184 合成测试瓦片"
+ },
+ "中原楼": {
+  "tile": "中原楼.png",
+  "kind": "bay",
+  "floorsPerTile": 1,
+  "baysPerTile": 2,
+  "wallColor": "#d4ccbc",
+  "glassColor": "#7896a0",
+  "trimColor": "#e4dccc",
+  "confidence": "dev",
+  "note": "506x184 合成测试瓦片"
+ }
+}

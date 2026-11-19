@@ -1,0 +1,19 @@
+{
+  "name": "zuel-nanhu-campus-3d",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "中南财经政法大学南湖校区 · 单文件 file:// 可玩 HFF 风 3D 网页",
+  "scripts": {
+    "build": "node build/build.mjs",
+    "assets": "node tools/build-asset.mjs",
+    "pack": "node tools/pack-textures.mjs",
+    "normcheck": "node tools/normcheck.mjs",
+    "shot": "bash tools/shot.sh"
+  },
+  "dependencies": {
+    "cannon-es": "^0.20.0",
+    "esbuild": "^0.21.5",
+    "three": "^0.160.0"
+  }
+}
